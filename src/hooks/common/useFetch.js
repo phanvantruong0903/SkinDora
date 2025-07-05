@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import axios from "../api/axiosInstance";
+import axiosPrivate from "../../utils/axiosPrivate";
+import axiosPublic from "../../utils/axiosPublic";
 
 // Example sử dụng: const { data, loading, error, refetch } = useFetch('/users')
 
-export default function useFetch(url, autoRun = true) {
+export default function useFetch(url, autoRun = true, isPublic = true) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(autoRun);
   const [error, setError] = useState(null);
@@ -11,9 +12,13 @@ export default function useFetch(url, autoRun = true) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(url);
+      setError(null);
+
+      const client = isPublic ? axiosPublic : axiosPrivate;
+      const res = await client.get(url);
       setData(res.data.data);
     } catch (err) {
+      console.log(err?.response?.data || err.message || err);
       setError(err);
     } finally {
       setLoading(false);
