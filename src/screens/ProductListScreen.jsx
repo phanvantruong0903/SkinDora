@@ -1,17 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
-  TextInput,
   ActivityIndicator,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import useFetch from "../hooks/common/useFetch";
 import { productEndpoints } from "../config/api";
 import ProductCard from "../components/ProductCard";
+import ErrorScreen from "./ErrorScreen";
+import LocationHeader from "../components/LocationHeader";
+import BannerCarousel from "../components/BannerCarousel";
+import { Search } from "lucide-react-native";
 
 const CATEGORIES = [
   "All",
@@ -22,36 +25,106 @@ const CATEGORIES = [
   "Baby Care",
 ];
 
-export default function ProductListScreen() {
+export default function ProductListScreen({ searchFromParam }) {
   const navigation = useNavigation();
-  const { data, loading, error } = useFetch(productEndpoints.list, true, true);
+  const route = useRoute();
+
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [page, setPage] = useState(1);
+  const [products, setProducts] = useState([]);
 
-  if (loading)
+  const { data, loading, error, refetch } = useFetch(
+    productEndpoints.list +
+      `?page=${page}&limit=10${search ? `&q=${search}` : ""}`,
+    true,
+    true
+  );
+
+  useEffect(() => {
+    if (searchFromParam) {
+      setSearch(searchFromParam);
+      setPage(1);
+      setProducts([]); 
+    }
+  }, [searchFromParam]);
+
+  useEffect(() => {
+    if (!data) return;
+
+    if (page === 1) {
+      setProducts(data);
+    } else {
+      setProducts((prev) => [...prev, ...data]);
+    }
+  }, [data]);
+
+  const filteredData = products.filter((item) => {
+    const matchSearch = item.name_on_list
+      .toLowerCase()
+      .includes(search.toLowerCase());
+    const matchCategory =
+      selectedCategory === "All" || item.category === selectedCategory;
+    return matchSearch && matchCategory;
+  });
+
+  const handleScroll = (event) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const isBottom =
+      layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
+
+    if (isBottom && data?.length >= 10) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  if (loading && page === 1)
     return <ActivityIndicator size="large" style={{ marginTop: 100 }} />;
-  if (error) return <Text style={styles.errorText}>Lỗi rồi 😢</Text>;
+
+  if (error)
+    return <ErrorScreen message="Không thể tải dữ liệu!" onRetry={refetch} />;
 
   return (
-    <View style={styles.container}>
-      {/* Search bar */}
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search for medicines or stores..."
-        value={search}
-        onChangeText={setSearch}
-      />
+    <ScrollView
+      style={styles.container}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+      showsVerticalScrollIndicator={false}
+    >
+      <LocationHeader />
+      <BannerCarousel />
 
-      {/* Category Filter */}
-      <FlatList
-        data={CATEGORIES}
+      <TouchableOpacity
+        style={styles.searchInput}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate("SearchScreen")}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+          <Search size={18} color="#888" />
+          <Text
+            style={[styles.searchText, { marginLeft: 8, flex: 1 }]}
+            numberOfLines={1}
+          >
+            {search ? search : "Tìm kiếm sản phẩm hoặc cửa hàng..."}
+          </Text>
+
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")}>
+              <Text style={styles.clearText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
+
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item}
-        style={{ marginVertical: 10, height: 50 }}
-        contentContainerStyle={{ paddingHorizontal: 12 }}
-        renderItem={({ item }) => (
+        contentContainerStyle={{ paddingHorizontal: 12, marginVertical: 10 }}
+        style={{ height: 50, marginBottom: 12 }}
+      >
+        {CATEGORIES.map((item) => (
           <TouchableOpacity
+            key={item}
             style={[
               styles.categoryItem,
               selectedCategory === item && styles.categoryItemSelected,
@@ -67,24 +140,24 @@ export default function ProductListScreen() {
               {item}
             </Text>
           </TouchableOpacity>
-        )}
-      />
+        ))}
+      </ScrollView>
 
-      {/* Product Grid */}
-      <FlatList
-        data={data}
-        numColumns={2}
-        columnWrapperStyle={{ justifyContent: "space-between" }}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={{ padding: 12 }}
-        renderItem={({ item }) => (
+      <View style={styles.gridContainer}>
+        {filteredData.map((item) => (
           <ProductCard
+            key={item._id}
             product={item}
-            onPress={() => navigation.navigate("Detail", { product: item })}
+            onPress={() => navigation.navigate("Detail", { id: item._id })}
+            style={{ width: "48%", marginBottom: 16 }}
           />
-        )}
-      />
-    </View>
+        ))}
+      </View>
+
+      {loading && page > 1 && (
+        <ActivityIndicator size="small" style={{ marginBottom: 20 }} />
+      )}
+    </ScrollView>
   );
 }
 
@@ -92,13 +165,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  searchInput: {
-    margin: 12,
-    padding: 12,
-    borderRadius: 20,
-    backgroundColor: "#f1f1f1",
-    fontSize: 16,
   },
   categoryItem: {
     paddingHorizontal: 16,
@@ -120,10 +186,30 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-  errorText: {
-    textAlign: "center",
-    marginTop: 100,
-    color: "red",
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingBottom: 20,
+  },
+  searchInput: {
+    marginHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 4,
+    backgroundColor: "#f1f1f1",
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    height: 40,
+    justifyContent: "center",
+  },
+  searchText: {
     fontSize: 16,
+    color: "#999",
+  },
+  clearText: {
+    fontSize: 18,
+    color: "#666",
+    marginLeft: 8,
   },
 });
