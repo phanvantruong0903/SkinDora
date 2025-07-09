@@ -1,7 +1,8 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import ProfileScreen from "../screens/ProfileScreen";
-import SettingsScreen from "../screens/SettingsScreen";
+import LoginScreen from "../screens/LoginScreen";
+import RegisterScreen from "../screens/RegisterScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -14,9 +15,14 @@ export default function ProfileStack() {
         options={{ title: "Thông tin cá nhân" }}
       />
       <Stack.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{ title: "Cài đặt" }}
+        name="Login"
+        component={LoginScreen}
+        options={{ title: "Đăng nhập" }}
+      />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{ title: "Đăng ký" }}
       />
     </Stack.Navigator>
   );

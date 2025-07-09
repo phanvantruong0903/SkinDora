@@ -8,15 +8,13 @@ import {
   TouchableOpacity,
   Dimensions,
   ActivityIndicator,
-  TextInput,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { ArrowLeft, ShoppingCart, Heart } from "lucide-react-native";
+import { ArrowLeft, ShoppingCart, Heart, Search } from "lucide-react-native";
 import * as SecureStore from "expo-secure-store";
 import Toast from "react-native-toast-message";
 import useFetch from "../hooks/common/useFetch";
 import usePost from "../hooks/common/usePost";
-import { Search } from "lucide-react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -25,7 +23,6 @@ export default function ProductDetailScreen() {
   const navigation = useNavigation();
   const scrollRef = useRef(null);
   const { id } = route.params || {};
-  const [search, setSearch] = useState("");
   const [filteredRating, setFilteredRating] = useState(null);
   const [reviewStats, setReviewStats] = useState({
     total: 0,
@@ -52,7 +49,6 @@ export default function ProductDetailScreen() {
     filteredRating ? { rating: filteredRating } : null,
     (res) => {
       if (!Array.isArray(res.data)) return;
-
       setReviews(res.data);
       if (filteredRating === null) {
         setReviewStats({
@@ -94,7 +90,7 @@ export default function ProductDetailScreen() {
         return;
       }
 
-      const res = await addToWishlist({ productId: [id] });
+      await addToWishlist({ productId: [id] });
       Toast.show({
         type: "success",
         text1: "Đã thêm vào danh sách yêu thích",
@@ -131,6 +127,7 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header cố định */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} />
@@ -142,6 +139,7 @@ export default function ProductDetailScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Search bar bên trong ScrollView */}
         <View style={styles.searchRow}>
           <TouchableOpacity
             style={styles.searchInput}
@@ -157,6 +155,7 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Carousel */}
         <ScrollView
           ref={scrollRef}
           horizontal
@@ -175,6 +174,7 @@ export default function ProductDetailScreen() {
           ))}
         </ScrollView>
 
+        {/* Info */}
         <View style={styles.infoContainer}>
           <View style={styles.row}>
             <Text style={styles.title}>{product.name_on_list}</Text>
@@ -209,7 +209,7 @@ export default function ProductDetailScreen() {
             )}
           </View>
 
-          {/* Rating Breakdown */}
+          {/* Grouped rating filter */}
           {Object.keys(reviewStats.grouped || {}).length > 0 && (
             <View style={{ marginTop: 12 }}>
               {[5, 4, 3, 2, 1].map((star) => (
@@ -256,7 +256,7 @@ export default function ProductDetailScreen() {
           {loadingReviews ? (
             <ActivityIndicator size="small" color="#00C897" />
           ) : reviews.length === 0 ? (
-            <Text>Chưa có đánh giá nào.</Text>
+            <Text style={{ marginBottom: 20 }}>Chưa có đánh giá nào.</Text>
           ) : (
             reviews.map((review) => (
               <View key={review._id} style={styles.reviewCard}>
@@ -295,12 +295,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#f1f1f1",
     fontSize: 16,
-    marginRight: 8,
   },
-  cartButton: {
-    padding: 10,
-    backgroundColor: "#f1f1f1",
-    borderRadius: 20,
+  searchText: {
+    fontSize: 16,
+    color: "#999",
   },
   carousel: { marginTop: 16 },
   productImage: {
@@ -356,19 +354,5 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
     backgroundColor: "#FAFAFA",
-  },
-  searchInputTouchable: {
-    flex: 1,
-    marginLeft: 10,
-    justifyContent: "center",
-    height: 36,
-  },
-  searchInputText: {
-    fontSize: 16,
-    color: "#999",
-  },
-  searchText: {
-    fontSize: 16,
-    color: "#999",
   },
 });

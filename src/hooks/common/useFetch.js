@@ -33,7 +33,9 @@ export default function useFetch(
         signal: controllerRef.current.signal,
       });
 
-      const responseData = res.data?.data ?? res.data?.result ?? res.data;
+      const responseData = url.includes("/review")
+        ? res.data 
+        : res.data?.data ?? res.data?.result ?? res.data;
 
       setData(responseData);
 
