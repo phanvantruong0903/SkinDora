@@ -10,7 +10,6 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async () => {
     try {
       await login({ email, password });
-      // Sau khi login thành công thì RootNavigator sẽ tự redirect sang MainTabs
     } catch (err) {
       alert("Sai tài khoản hoặc mật khẩu");
     }

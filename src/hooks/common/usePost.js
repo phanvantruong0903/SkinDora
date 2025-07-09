@@ -1,17 +1,19 @@
 import { useState } from "react";
-import axios from "../api/axiosInstance";
-
-// Example sử dụng: const { post, loading, error } = usePost('/login')
+import axiosPrivate from "../../utils/axiosPrivate";
+import { getAccessToken } from "../../utils/tokenStorage";
 
 export default function usePost(url) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
 
-  const post = async (body) => {
+  const post = async (body, customHeaders = {}) => {
     try {
       setLoading(true);
-      const res = await axios.post(url, body);
+      setError(null);
+      const res = await axiosPrivate.post(url, body, {
+        headers: customHeaders,
+      });
       setData(res.data.data);
       return res.data;
     } catch (err) {
