@@ -81,21 +81,10 @@ export default function ProductDetailScreen() {
 
   const handleAddToWishList = async () => {
     try {
-      const token = await SecureStore.getItemAsync("accessToken");
-      if (!token) {
-        Toast.show({
-          type: "info",
-          text1: "Bạn cần đăng nhập để yêu thích sản phẩm",
-        });
-        return;
-      }
-
-      await addToWishlist({ productId: [id] });
-      Toast.show({
-        type: "success",
-        text1: "Đã thêm vào danh sách yêu thích",
-        visibilityTime: 2000,
-      });
+      const body = {
+        productId: [id],
+      };
+      await addToWishlist(body);
     } catch (err) {
       Toast.show({
         type: "error",
