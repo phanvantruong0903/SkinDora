@@ -1,6 +1,5 @@
 import { useState } from "react";
 import axiosPrivate from "../../utils/axiosPrivate";
-import { getAccessToken } from "../../utils/tokenStorage";
 
 export default function usePost(url) {
   const [loading, setLoading] = useState(false);
