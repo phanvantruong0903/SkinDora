@@ -1,12 +1,12 @@
-import { useAuthContext } from "../contexts/AuthContext";
-import AuthStack from "./AuthStack";
 import MainTabs from "./MainTabs";
-import LoadingScreen from "../screens/LoadingScreen"; // 👈 màn hình chờ lúc check token
+import LoadingScreen from "../screens/LoadingScreen";
+import { useAuth } from "../hooks/useAuth";
+import AuthStack from "./AuthStack";
 
 export default function RootNavigator() {
-  const { isAuthenticated, loading } = useAuthContext();
+  const { accessToken, isLoading } = useAuth();
 
-  if (loading) return <LoadingScreen />;
+  if (isLoading) return <LoadingScreen />;
 
-  return <MainTabs />; 
+  return accessToken ? <MainTabs /> : <AuthStack />;
 }
