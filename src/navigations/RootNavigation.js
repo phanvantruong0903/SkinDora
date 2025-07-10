@@ -8,5 +8,5 @@ export default function RootNavigator() {
 
   if (isLoading) return <LoadingScreen />;
 
-  return <MainTabs />;
+  return accessToken ? <MainTabs /> : <AuthStack />;
 }

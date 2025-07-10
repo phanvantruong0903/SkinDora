@@ -8,9 +8,9 @@ export const CartProvider = ({ children }) => {
 
   const fetchCart = async () => {
     try {
-      const res = await axios.get("/carts");
-      console.log("cart: ", res);
-      setCart(res.data);
+      const {data} = await axios.get("/carts");
+      console.log(data.result)
+      setCart(data.result);
     } catch (err) {
       console.error("Lỗi fetch cart:", err);
     }

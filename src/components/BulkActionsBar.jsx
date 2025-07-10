@@ -10,7 +10,7 @@ export default function BulkActionsBar({
     <View style={styles.bar}>
       {products.length > 1 && (
         <TouchableOpacity
-          onPress={() => setSelected(products.map((p) => p.id))}
+          onPress={() => setSelected(products.map((p) => p.ProductID))}
         >
           <Text style={styles.allTxt}>Chọn tất cả</Text>
         </TouchableOpacity>

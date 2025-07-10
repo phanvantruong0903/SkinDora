@@ -29,63 +29,28 @@ const paymentLabelMap = {
 };
 
 const CartScreen = ({ navigation, route }) => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: "1",
-      name: "Sữa Rửa Mặt Cocoon Bí Đao",
-      price: 250000,
-      quantity: 1,
-      image:
-        "https://mint07.com/wp-content/uploads/2023/06/sua-rua-mat-cocoon-bi-dao-140ml-1-768x768.jpg",
-    },
-    {
-      id: "2",
-      name: "Tẩy Tế Bào Chết Da Mặt Cocoon Từ Cà Phê Làm Sạch Sâu Cho Mọi Loại Da 150ml",
-      price: 575000,
-      quantity: 1,
-      image:
-        "https://yoy.vn/upload/images/tay-da-chet/cocoon-ca-phe-mat/ttbc-tai-nha-cho-da-dau-review.jpeg",
-    },
-    {
-      id: "3",
-      name: "Tẩy Tế Bào Chết Da Mặt Cocoon Từ Cà Phê Làm Sạch Sâu Cho Mọi Loại Da 150ml",
-      price: 575000,
-      quantity: 1,
-      image:
-        "https://yoy.vn/upload/images/tay-da-chet/cocoon-ca-phe-mat/ttbc-tai-nha-cho-da-dau-review.jpeg",
-    },
-    {
-      id: "4",
-      name: "Tẩy Tế Bào Chết Da Mặt Cocoon Từ Cà Phê Làm Sạch Sâu Cho Mọi Loại Da 150ml",
-      price: 575000,
-      quantity: 1,
-      image:
-        "https://yoy.vn/upload/images/tay-da-chet/cocoon-ca-phe-mat/ttbc-tai-nha-cho-da-dau-review.jpeg",
-    },
-  ]);
   const [selectProductIds, setSelectProductIds] = useState([]);
   const [appliedVoucher, setAppliedVoucher] = useState(undefined);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(undefined);
-  const { cart, updateProductQuantityInCart } = useCart();
+
+  const { cart, updateProductQuantityInCart, removeFromCart } = useCart();
 
   const { selectedVoucher, selectedPaymentMethod: paymentFromRoute } =
     route.params || {};
 
-  const total = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cartItems]);
-
   useEffect(() => {
-    if (selectedVoucher) {
-      setAppliedVoucher(selectedVoucher);
-    }
+    if (selectedVoucher) setAppliedVoucher(selectedVoucher);
   }, [selectedVoucher]);
 
   useEffect(() => {
-    if (paymentFromRoute) {
-      setSelectedPaymentMethod(paymentFromRoute);
-    }
+    if (paymentFromRoute) setSelectedPaymentMethod(paymentFromRoute);
   }, [paymentFromRoute]);
+
+  const total = useMemo(() => {
+    return Array.isArray(cart.Products)
+      ? cart.Products?.reduce((sum, item) => sum + item.unitPrice * item.Quantity, 0)
+      : 0;
+  }, [cart]);
 
   const discountAmount = useMemo(() => {
     if (!appliedVoucher) return 0;
@@ -99,38 +64,24 @@ const CartScreen = ({ navigation, route }) => {
     if (appliedVoucher.discountType === "FIXED") {
       discount = appliedVoucher.discountAmount;
     }
-
     if (appliedVoucher.discountType === "PERCENTAGE") {
       discount = (total * appliedVoucher.discountAmount) / 100;
     }
-
     if (appliedVoucher.maxDiscountAmount) {
       return Math.min(discount, appliedVoucher.maxDiscountAmount);
     }
-
     return discount;
   }, [appliedVoucher, total]);
 
   const finalPrice = total - discountAmount;
 
-  const updateQuantity = (id, change) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
+  const updateQuantity = async (id, currentQuantity, change) => {
+    const newQuantity = Math.max(1, currentQuantity + change);
+    await updateProductQuantityInCart(id, newQuantity);
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      setSelectProductIds([]);
-    }, [])
-  );
-
-  const handleDelete = (ids) => {
-    //TODO: gọi api || xoá hàng khỏi giỏ bằng AsyncStorage
+  const handleDelete = async (ids) => {
+    await Promise.all(ids.map((id) => removeFromCart(id)));
     setSelectProductIds([]);
   };
 
@@ -155,26 +106,32 @@ const CartScreen = ({ navigation, route }) => {
     );
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      setSelectProductIds([]);
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       {selectProductIds.length > 0 && (
         <BulkActionsBar
-          products={cartItems}
+          products={cart.Products}
           setSelected={setSelectProductIds}
           confirmDelete={confirmDelete}
         />
       )}
       <FlatList
-        data={cartItems}
-        keyExtractor={(item) => item.id}
+        data={cart.Products}
+        keyExtractor={(item) => item.ProductID}
         renderItem={({ item }) => (
           <ProductInCart
             item={item}
             selected={selectProductIds}
             onPress={() =>
               selectProductIds.length
-                ? toggleSelect(item.id)
-                : navigation.navigate("Detail", { id: item.id })
+                ? toggleSelect(item.ProductID)
+                : navigation.navigate("Detail", { id: item.ProductID })
             }
             updateQuantity={updateQuantity}
             toggleSelect={toggleSelect}
@@ -245,7 +202,7 @@ const CartScreen = ({ navigation, route }) => {
           </View>
           <TouchableOpacity style={styles.checkoutBtn}>
             <Text style={styles.checkoutText}>
-              Mua Hàng ({cartItems.length})
+              Mua Hàng ({Array.isArray(cart.Products) ? cart.Products?.length : 0})
             </Text>
           </TouchableOpacity>
         </View>

@@ -18,12 +18,12 @@ const ProductInCart = ({
   toggleSelect,
 }) => {
   const isSelecting = selected.length > 0;
-  const isSelected = selected.includes(item.id);
+  const isSelected = selected.includes(item.ProductID);
 
   return (
     <TouchableWithoutFeedback
-      onLongPress={() => toggleSelect?.(item.id)}
-      onPress={() => onPress(item.id)}
+      onLongPress={() => toggleSelect?.(item.ProductID)}
+      onPress={() => onPress(item.ProductID)}
     >
       <View
         style={[styles.productItem, isSelected && styles.selectedBackground]}
@@ -42,25 +42,31 @@ const ProductInCart = ({
           <Text style={styles.productName}>{item.name}</Text>
           <View style={styles.productFooter}>
             <Text style={styles.productPrice}>
-              {item.price.toLocaleString()} đ
+              {item.unitPrice.toLocaleString()} đ
             </Text>
             <View style={styles.quantityContainer}>
               <TouchableOpacity
-                onPress={() => updateQuantity(item.id, -1)}
+                onPress={() =>
+                  updateQuantity(item.ProductID, item.Quantity, -1)
+                }
                 style={styles.quantityBtn}
               >
                 <Text>-</Text>
               </TouchableOpacity>
               <TextInput
                 style={styles.quantityInput}
-                value={item.quantity.toString()}
+                value={item.Quantity.toString()}
                 onChangeText={(text) =>
-                  updateQuantity(item.id, parseInt(text) - item.quantity || 0)
+                  updateQuantity(
+                    item.ProductID,
+                    item.Quantity,
+                    parseInt(text) - item.Quantity || 0
+                  )
                 }
                 keyboardType="numeric"
               />
               <TouchableOpacity
-                onPress={() => updateQuantity(item.id, 1)}
+                onPress={() => updateQuantity(item.ProductID, item.Quantity, 1)}
                 style={styles.quantityBtn}
               >
                 <Text>+</Text>
@@ -84,7 +90,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   selectedBackground: {
-    backgroundColor: "#d1fae5", 
+    backgroundColor: "#d1fae5",
   },
   checkboxContainer: {
     marginRight: 10,
