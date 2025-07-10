@@ -6,6 +6,7 @@ import RegisterScreen from "../screens/RegisterScreen";
 import UserProfileScreen from "../screens/UserProfileScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 import WishlistScreen from "../screens/WishListScreen";
+import OrderListScreen from "../screens/OrderScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -44,7 +45,7 @@ export default function ProfileStack() {
       />
       <Stack.Screen
         name="Orders"
-        component={ChangePasswordScreen}
+        component={OrderListScreen}
         options={{ title: "Đơn hàng của bạn" }}
       />
     </Stack.Navigator>
