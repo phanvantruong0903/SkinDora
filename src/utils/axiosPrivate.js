@@ -7,6 +7,7 @@ import {
   clearTokens,
 } from "./tokenStorage";
 import { authEndpoints } from "../config/api";
+import publicAxios from "./axiosPublic";
 
 const privateAxios = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
@@ -32,26 +33,34 @@ privateAxios.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const refreshToken = await getRefreshToken();
-        const res = await privateAxios.post(authEndpoints.refresh, {
+        const res = await publicAxios.post(authEndpoints.refresh, {
           refresh_token: refreshToken,
         });
-        const { access_token, refresh_token } = res.data;
 
-        await saveTokens({
-          accessToken: access_token,
-          refreshToken: refresh_token,
-        });
+        const tokens = res?.data?.result;
+        const access_token = tokens?.access_token;
+        const refresh_token = tokens?.refresh_token;
 
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
-        return privateAxios(originalRequest);
+        if (access_token && refresh_token) {
+          await saveTokens({
+            accessToken: access_token,
+            refreshToken: refresh_token,
+          });
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          return privateAxios(originalRequest);
+        } else {
+          throw new Error("Invalid refresh token response structure");
+        }
       } catch (err) {
-        console.log("❌ Refresh token failed:", err?.response?.data || err.message);
+        console.log(
+          "Refresh token failed:",
+          err?.response?.data || err.message
+        );
         await clearTokens();
         return Promise.reject(err);
       }
     }
 
-    console.log("❌ Axios error:", error?.response?.data || error.message);
     return Promise.reject(error);
   }
 );

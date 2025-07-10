@@ -18,7 +18,11 @@ import {
 } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import useFetch from "../hooks/common/useFetch";
-import { clearTokens, getRefreshToken } from "../utils/tokenStorage";
+import {
+  clearTokens,
+  getRefreshToken,
+  getAccessToken,
+} from "../utils/tokenStorage";
 import usePost from "../hooks/common/usePost";
 
 const defaultAvatar =
@@ -43,6 +47,15 @@ export default function ProfileScreen() {
     } catch (err) {
       console.error("Lỗi khi đăng xuất:", err?.response?.data || err.message);
       alert("Đăng xuất thất bại!");
+    }
+  };
+
+  const handleProtectedNavigation = async (screenName) => {
+    const token = await getAccessToken();
+    if (token) {
+      navigation.navigate(screenName);
+    } else {
+      navigation.navigate("Login");
     }
   };
 
@@ -90,22 +103,22 @@ export default function ProfileScreen() {
           <Option
             label="Thông tin cá nhân"
             icon={<User size={20} color="#333" />}
-            onPress={() => navigation.navigate("UserProfile")}
+            onPress={() => handleProtectedNavigation("UserProfile")}
           />
           <Option
             label="Đơn hàng"
             icon={<ShoppingBag size={20} color="#333" />}
-            onPress={() => navigation.navigate("Orders")}
+            onPress={() => handleProtectedNavigation("Orders")}
           />
           <Option
             label="Danh sách yêu thích"
             icon={<ShoppingBag size={20} color="#333" />}
-            onPress={() => navigation.navigate("Favorite")}
+            onPress={() => handleProtectedNavigation("Favorite")}
           />
           <Option
             label="Đổi mật khẩu"
             icon={<Lock size={20} color="#333" />}
-            onPress={() => navigation.navigate("ChangePassword")}
+            onPress={() => handleProtectedNavigation("ChangePassword")}
           />
           {user && (
             <Option
