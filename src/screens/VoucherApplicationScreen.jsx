@@ -5,14 +5,13 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { DiscountType } from "../../types/voucher";
 
 const availableVouchers = [
   {
     id: "1",
     code: "SKIN20%",
     name: "Giảm 20% cho đơn hàng đầu tiên, tối đa 150.000đ",
-    discountType: DiscountType.PERCENTAGE,
+    discountType: "PERCENTAGE",
     discountAmount: 20,
     minTotalApplicable: 0,
     maxDiscountAmount: 150000,
@@ -21,7 +20,7 @@ const availableVouchers = [
     id: "2",
     code: "SKIN50",
     name: "Giảm 50K cho đơn trên 300.000đ",
-    discountType: DiscountType.FIXED,
+    discountType: "FIXED",
     discountAmount: 50000,
     minTotalApplicable: 300000,
   },

@@ -9,10 +9,10 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { DiscountType } from "../../types/voucher";
-import BulkActionsBar from "../../components/BulkActionsBar";
 import { useFocusEffect } from "@react-navigation/native";
-import ProductInCart from "../../components/ProductInCart";
+import { useCart } from "../hooks/useCart";
+import BulkActionsBar from "../components/BulkActionsBar";
+import ProductInCart from "../components/ProductInCart";
 
 const paymentLabelStyles = {
   cod: { color: "#4b5563", textAlign: "right" },
@@ -66,6 +66,7 @@ const CartScreen = ({ navigation, route }) => {
   const [selectProductIds, setSelectProductIds] = useState([]);
   const [appliedVoucher, setAppliedVoucher] = useState(undefined);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(undefined);
+  const { cart, updateProductQuantityInCart } = useCart();
 
   const { selectedVoucher, selectedPaymentMethod: paymentFromRoute } =
     route.params || {};
@@ -95,11 +96,11 @@ const CartScreen = ({ navigation, route }) => {
       return 0;
 
     let discount = 0;
-    if (appliedVoucher.discountType === DiscountType.FIXED) {
+    if (appliedVoucher.discountType === "FIXED") {
       discount = appliedVoucher.discountAmount;
     }
 
-    if (appliedVoucher.discountType === DiscountType.PERCENTAGE) {
+    if (appliedVoucher.discountType === "PERCENTAGE") {
       discount = (total * appliedVoucher.discountAmount) / 100;
     }
 
