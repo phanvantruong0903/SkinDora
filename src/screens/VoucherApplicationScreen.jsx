@@ -4,30 +4,35 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
+import privateAxios from "../utils/axiosPrivate";
+import { voucherEndpoints } from "../config/api";
+import { useEffect, useState } from "react";
 
-const availableVouchers = [
-  {
-    id: "1",
-    code: "SKIN20%",
-    name: "Giảm 20% cho đơn hàng đầu tiên, tối đa 150.000đ",
-    discountType: "PERCENTAGE",
-    discountAmount: 20,
-    minTotalApplicable: 0,
-    maxDiscountAmount: 150000,
-  },
-  {
-    id: "2",
-    code: "SKIN50",
-    name: "Giảm 50K cho đơn trên 300.000đ",
-    discountType: "FIXED",
-    discountAmount: 50000,
-    minTotalApplicable: 300000,
-  },
-];
+
 
 const VoucherApplicationScreen = ({ navigation, route }) => {
   const { selectedVoucher, selectedPaymentMethod } = route.params || {};
+  const [vouchers, setVouchers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchVouchers = async () => {
+    try {
+      const {data} = await privateAxios.get(voucherEndpoints.list);
+      console.log(data)
+      setVouchers(data.data || []);
+    } catch (err) {
+      console.error("Failed to fetch vouchers", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVouchers();
+  }, []);
+
   const handleSelectVoucher = (voucher) => {
     navigation.navigate("Cart", {
       selectedVoucher: voucher,
@@ -37,49 +42,53 @@ const VoucherApplicationScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={availableVouchers}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          const isSelected = selectedVoucher?.id === item.id;
-          return (
-            <TouchableOpacity
-              style={[
-                styles.voucherItem,
-                isSelected && styles.voucherItemSelected,
-              ]}
-              onPress={() => handleSelectVoucher(item)}
-            >
-              <Text
+      {loading ? (
+        <ActivityIndicator size="large" color="#00C897" />
+      ) : (
+        <FlatList
+          data={vouchers}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => {
+            const isSelected = selectedVoucher?._id === item._id;
+            return (
+              <TouchableOpacity
                 style={[
-                  styles.voucherCode,
-                  isSelected && styles.voucherTextSelected,
+                  styles.voucherItem,
+                  isSelected && styles.voucherItemSelected,
                 ]}
+                onPress={() => handleSelectVoucher(item)}
               >
-                {item.code}
-              </Text>
-              <Text
-                style={[
-                  styles.voucherName,
-                  isSelected && styles.voucherTextSelected,
-                ]}
-              >
-                {item.name}
-              </Text>
-              <Text
-                style={[
-                  styles.conditionText,
-                  isSelected && styles.voucherTextSelected,
-                ]}
-              >
-                {item.minTotalApplicable
-                  ? `Áp dụng cho đơn từ ${item.minTotalApplicable.toLocaleString()}đ`
-                  : "Không yêu cầu giá trị tối thiểu"}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
+                <Text
+                  style={[
+                    styles.voucherCode,
+                    isSelected && styles.voucherTextSelected,
+                  ]}
+                >
+                  {item.code}
+                </Text>
+                <Text
+                  style={[
+                    styles.voucherName,
+                    isSelected && styles.voucherTextSelected,
+                  ]}
+                >
+                  {item.description}
+                </Text>
+                <Text
+                  style={[
+                    styles.conditionText,
+                    isSelected && styles.voucherTextSelected,
+                  ]}
+                >
+                  {item.minOrderValue
+                    ? `Áp dụng cho đơn từ ${item.minOrderValue.toLocaleString()}đ`
+                    : "Không yêu cầu giá trị tối thiểu"}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      )}
     </View>
   );
 };

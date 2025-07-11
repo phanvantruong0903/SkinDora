@@ -13,6 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCart } from "../hooks/useCart";
 import BulkActionsBar from "../components/BulkActionsBar";
 import ProductInCart from "../components/ProductInCart";
+import { DiscountType } from "../constants/enum";
 
 const paymentLabelStyles = {
   cod: { color: "#4b5563", textAlign: "right" },
@@ -55,17 +56,17 @@ const CartScreen = ({ navigation, route }) => {
   const discountAmount = useMemo(() => {
     if (!appliedVoucher) return 0;
     if (
-      appliedVoucher.minTotalApplicable &&
-      total < appliedVoucher.minTotalApplicable
+      appliedVoucher.minOrderValue &&
+      total < appliedVoucher.minOrderValue
     )
       return 0;
 
     let discount = 0;
-    if (appliedVoucher.discountType === "FIXED") {
-      discount = appliedVoucher.discountAmount;
+    if (appliedVoucher.discountType === DiscountType.FIXED) {
+      discount = appliedVoucher.discountValue;
     }
-    if (appliedVoucher.discountType === "PERCENTAGE") {
-      discount = (total * appliedVoucher.discountAmount) / 100;
+    if (appliedVoucher.discountType === DiscountType.PERCENTAGE) {
+      discount = (total * appliedVoucher.discountValue) / 100;
     }
     if (appliedVoucher.maxDiscountAmount) {
       return Math.min(discount, appliedVoucher.maxDiscountAmount);

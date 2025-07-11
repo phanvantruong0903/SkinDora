@@ -19,6 +19,17 @@ const ProductInCart = ({
 }) => {
   const isSelecting = selected.length > 0;
   const isSelected = selected.includes(item.ProductID);
+  const canDecrease = item.Quantity > 1;
+  const canIncrease = item.Quantity < item.QuantityInStock;
+
+  const handleChangeText = (text) => {
+    let newQty = parseInt(text);
+    if (isNaN(newQty) || newQty <= 0) return;
+    newQty = Math.min(newQty, item.QuantityInStock);
+
+    const diff = newQty - item.Quantity;
+    if (diff !== 0) updateQuantity(item.ProductID, item.Quantity, diff);
+  };
 
   return (
     <TouchableWithoutFeedback
@@ -49,27 +60,23 @@ const ProductInCart = ({
                 onPress={() =>
                   updateQuantity(item.ProductID, item.Quantity, -1)
                 }
-                style={styles.quantityBtn}
+                disabled={!canDecrease}
+                style={[styles.quantityBtn, !canDecrease && styles.disabledBtn]}
               >
-                <Text>-</Text>
+                <Text style={{ opacity: canDecrease ? 1 : 0.4 }}>−</Text>
               </TouchableOpacity>
               <TextInput
                 style={styles.quantityInput}
                 value={item.Quantity.toString()}
-                onChangeText={(text) =>
-                  updateQuantity(
-                    item.ProductID,
-                    item.Quantity,
-                    parseInt(text) - item.Quantity || 0
-                  )
-                }
+                onChangeText={(text) => handleChangeText(text)}
                 keyboardType="numeric"
               />
               <TouchableOpacity
                 onPress={() => updateQuantity(item.ProductID, item.Quantity, 1)}
-                style={styles.quantityBtn}
+                disabled={!canIncrease}
+                style={[styles.quantityBtn, !canIncrease && styles.disabledBtn]}
               >
-                <Text>+</Text>
+                <Text style={{ opacity: canIncrease ? 1 : 0.4 }}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -128,6 +135,9 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRadius: 5,
     marginHorizontal: 5,
+  },
+  disabledBtn: {
+    backgroundColor: "#eee",
   },
   quantityInput: {
     width: 40,
