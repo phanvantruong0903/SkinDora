@@ -6,8 +6,12 @@ import {
   StyleSheet,
   Image,
   StatusBar,
+  Linking,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import {
   User,
   LogOut,
@@ -15,6 +19,8 @@ import {
   ShoppingBag,
   LogIn,
   UserPlus,
+  HelpCircle,
+  Star,
 } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import useFetch from "../hooks/common/useFetch";
@@ -26,11 +32,11 @@ import {
 import usePost from "../hooks/common/usePost";
 
 const defaultAvatar =
-  "https://png.pngtree.com/png-clipart/20210129/ourmid/pngtree-blue-default-avatar-png-image_2813123.jpg";
+  "https://s3.amazonaws.com/37assets/svn/765-default-avatar.png";
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-
   const { data: user, setData: setUser } = useFetch("/users/me", true, false);
   const { post: postLogout } = usePost("/users/logout");
 
@@ -40,7 +46,6 @@ export default function ProfileScreen() {
       if (refreshToken) {
         await postLogout({ refresh_token: refreshToken });
       }
-
       await clearTokens();
       setUser(null);
       alert("Đăng xuất thành công!");
@@ -60,8 +65,26 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#B197FC" }}>
-      <StatusBar backgroundColor="#B197FC" barStyle="light-content" />
+    <View style={{ flex: 1 }}>
+      {/* Nền tím phủ phần trên + tai thỏ */}
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: insets.top + 160,
+          backgroundColor: "#B197FC",
+          zIndex: -1,
+        }}
+      />
+
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
+
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerWrapper}>
           <View style={styles.headerRow}>
@@ -75,25 +98,31 @@ export default function ProfileScreen() {
                   ? `Xin chào, ${user.first_name} ${user.last_name}`
                   : "Xin chào, Khách"}
               </Text>
+
               {!user && (
-                <View style={styles.authButtons}>
-                  <TouchableOpacity
-                    style={styles.authButton}
-                    onPress={() => navigation.navigate("Login")}
-                  >
-                    <LogIn size={16} color="#fff" />
-                    <Text style={styles.authButtonText}>Đăng nhập</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.authButton, styles.registerButton]}
-                    onPress={() => navigation.navigate("Register")}
-                  >
-                    <UserPlus size={16} color="#000" />
-                    <Text style={[styles.authButtonText, { color: "#000" }]}>
-                      Đăng ký
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <>
+                  <Text style={styles.guestNote}>
+                    🎁 Đăng nhập để lưu sản phẩm yêu thích và theo dõi đơn hàng.
+                  </Text>
+                  <View style={styles.authButtons}>
+                    <TouchableOpacity
+                      style={styles.authButton}
+                      onPress={() => navigation.navigate("Login")}
+                    >
+                      <LogIn size={16} color="#fff" />
+                      <Text style={styles.authButtonText}>Đăng nhập</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.authButton, styles.registerButton]}
+                      onPress={() => navigation.navigate("Register")}
+                    >
+                      <UserPlus size={16} color="#000" />
+                      <Text style={[styles.authButtonText, { color: "#000" }]}>
+                        Đăng ký
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
               )}
             </View>
           </View>
@@ -119,6 +148,16 @@ export default function ProfileScreen() {
             label="Đổi mật khẩu"
             icon={<Lock size={20} color="#333" />}
             onPress={() => handleProtectedNavigation("ChangePassword")}
+          />
+          <Option
+            label="Trung tâm hỗ trợ"
+            icon={<HelpCircle size={20} color="#555" />}
+            onPress={() => Linking.openURL("mailto:skindora.site@gmail.com")}
+          />
+          <Option
+            label="Đánh giá ứng dụng"
+            icon={<Star size={20} color="#FFD700" />}
+            onPress={() => Linking.openURL("https:skindora.site")}
           />
           {user && (
             <Option
@@ -152,13 +191,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerWrapper: {
-    backgroundColor: "#B197FC",
     padding: 16,
+    paddingTop: 0,
+    backgroundColor: "transparent",
   },
   headerRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 16,
+    marginTop: 30,
   },
   avatar: {
     width: 70,
@@ -172,8 +213,13 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: "600",
-    marginBottom: 10,
     color: "#fff",
+    marginBottom: 6,
+  },
+  guestNote: {
+    fontSize: 13,
+    color: "#fff",
+    marginBottom: 10,
   },
   authButtons: {
     flexDirection: "row",
