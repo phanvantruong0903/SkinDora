@@ -1,4 +1,3 @@
-import MainTabs from "./MainTabs";
 import LoadingScreen from "../screens/LoadingScreen";
 import { useAuth } from "../hooks/useAuth";
 import MainTabsWithAuth from "./MainTabsWithAuth";

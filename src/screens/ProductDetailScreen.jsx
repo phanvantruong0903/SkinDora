@@ -14,8 +14,10 @@ import { ArrowLeft, ShoppingCart, Heart, Search } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import useFetch from "../hooks/common/useFetch";
 import usePost from "../hooks/common/usePost";
+import { useCart } from "../hooks/useCart";
 import usePut from "../hooks/common/usePut";
 import { getAccessToken } from "../utils/tokenStorage";
+
 
 const { width } = Dimensions.get("window");
 
@@ -25,6 +27,7 @@ export default function ProductDetailScreen() {
   const scrollRef = useRef(null);
   const { id } = route.params || {};
   const [filteredRating, setFilteredRating] = useState(null);
+  const { addToCart } = useCart();
   const [reviewStats, setReviewStats] = useState({
     total: 0,
     average: 0,
@@ -118,6 +121,24 @@ export default function ProductDetailScreen() {
     }
   };
 
+  const handleAddToCart = async () => {
+    try {
+      await addToCart({ ProductID: id, Quantity: 1 });
+      Toast.show({
+        type: "success",
+        text1: "Đã thêm vào giỏ hàng",
+        visibilityTime: 1500,
+      });
+    } catch (err) {
+      Toast.show({
+        type: "error",
+        text1:
+          err?.response?.data?.message ||
+          "Lỗi khi thêm vào giỏ hàng, vui lòng thử lại sau.",
+      });
+    }
+  };
+
   if (loadingProduct) {
     return (
       <View style={styles.center}>
@@ -145,10 +166,11 @@ export default function ProductDetailScreen() {
           <ArrowLeft size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chi tiết sản phẩm</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("CartTab")}>
           <ShoppingCart size={24} />
         </TouchableOpacity>
       </View>
+
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Search Bar */}
@@ -299,6 +321,9 @@ export default function ProductDetailScreen() {
           )}
         </View>
       </ScrollView>
+      <TouchableOpacity style={styles.addToCartBtn} onPress={handleAddToCart}>
+        <Text style={styles.addToCartText}>Thêm vào giỏ hàng</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -396,5 +421,20 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
     backgroundColor: "#FAFAFA",
+  },
+  addToCartBtn: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#00C897",
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addToCartText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
