@@ -9,7 +9,7 @@ const ProductCard = ({ product, onPress, style }) => {
       <Text style={styles.engName}>{product.engName_on_list}</Text>
       <Text style={styles.price}>
         {Number(product.price_on_list).toLocaleString("vi-VN")} ₫
-      </Text>{" "}
+      </Text>
     </Pressable>
   );
 };
