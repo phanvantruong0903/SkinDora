@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import useFetch from "../hooks/common/useFetch";
 import { productEndpoints } from "../config/api";
 import ProductCard from "../components/ProductCard";
@@ -16,42 +16,57 @@ import LocationHeader from "../components/LocationHeader";
 import BannerCarousel from "../components/BannerCarousel";
 import { Search } from "lucide-react-native";
 
-const CATEGORIES = [
-  "All",
-  "OTC Medicine",
-  "Vitamins",
-  "Supplements",
-  "Eye Care",
-  "Baby Care",
-];
-
 export default function ProductListScreen({ searchFromParam }) {
   const navigation = useNavigation();
-  const route = useRoute();
-
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);
 
+  // Fetch danh mục sản phẩm
+  const {
+    data: categoryDataRaw,
+    loading: categoryLoading,
+    error: categoryError,
+  } = useFetch("/products/get-all-filter-hsk-product-types");
+
+  const categories = [
+    { label: "Tất cả", value: null },
+    ...(categoryDataRaw?.map((item) => ({
+      label: item.option_name,
+      value: item._id,
+    })) || []),
+  ];
+
+  // Fetch sản phẩm theo page, search, category
   const { data, loading, error, refetch } = useFetch(
-    productEndpoints.list +
-      `?page=${page}&limit=10${search ? `&q=${search}` : ""}`,
+    productEndpoints.list,
     true,
-    true
+    true,
+    {
+      page,
+      limit: 12,
+      ...(search ? { q: search } : {}),
+      ...(selectedCategoryId
+        ? { filter_hsk_product_type: selectedCategoryId }
+        : {}),
+    }
   );
 
+  console.log(selectedCategoryId);
+
+  // Nếu searchFromParam thay đổi thì set lại search và reset sản phẩm
   useEffect(() => {
     if (searchFromParam) {
       setSearch(searchFromParam);
       setPage(1);
-      setProducts([]); 
+      setProducts([]);
     }
   }, [searchFromParam]);
 
+  // Gộp sản phẩm mới
   useEffect(() => {
     if (!data) return;
-
     if (page === 1) {
       setProducts(data);
     } else {
@@ -59,30 +74,40 @@ export default function ProductListScreen({ searchFromParam }) {
     }
   }, [data]);
 
-  const filteredData = products.filter((item) => {
-    const matchSearch = item.name_on_list
-      .toLowerCase()
-      .includes(search.toLowerCase());
-    const matchCategory =
-      selectedCategory === "All" || item.category === selectedCategory;
-    return matchSearch && matchCategory;
-  });
-
   const handleScroll = (event) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const isBottom =
       layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
 
-    if (isBottom && data?.length >= 10) {
+    if (isBottom && data?.length >= 12) {
       setPage((prev) => prev + 1);
     }
   };
 
-  if (loading && page === 1)
+  const handleSearchClear = () => {
+    setSearch("");
+    setPage(1);
+    setProducts([]);
+  };
+
+  const handleSelectCategory = (value) => {
+    setSelectedCategoryId(value);
+    setPage(1);
+    setProducts([]);
+  };
+
+  if ((loading && page === 1) || categoryLoading)
     return <ActivityIndicator size="large" style={{ marginTop: 100 }} />;
 
-  if (error)
-    return <ErrorScreen message="Không thể tải dữ liệu!" onRetry={refetch} />;
+  if (error || categoryError)
+    return (
+      <ErrorScreen
+        message="Không thể tải dữ liệu!"
+        onRetry={() => {
+          refetch();
+        }}
+      />
+    );
 
   return (
     <ScrollView
@@ -94,6 +119,7 @@ export default function ProductListScreen({ searchFromParam }) {
       <LocationHeader />
       <BannerCarousel />
 
+      {/* Search */}
       <TouchableOpacity
         style={styles.searchInput}
         activeOpacity={0.8}
@@ -109,42 +135,45 @@ export default function ProductListScreen({ searchFromParam }) {
           </Text>
 
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch("")}>
+            <TouchableOpacity onPress={handleSearchClear}>
               <Text style={styles.clearText}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
       </TouchableOpacity>
 
+      {/* Categories */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 12, marginVertical: 10 }}
         style={{ height: 50, marginBottom: 12 }}
       >
-        {CATEGORIES.map((item) => (
+        {categories.map((item) => (
           <TouchableOpacity
-            key={item}
+            key={item.value ?? "all"}
             style={[
               styles.categoryItem,
-              selectedCategory === item && styles.categoryItemSelected,
+              selectedCategoryId === item.value && styles.categoryItemSelected,
             ]}
-            onPress={() => setSelectedCategory(item)}
+            onPress={() => handleSelectCategory(item.value)}
           >
             <Text
               style={[
                 styles.categoryText,
-                selectedCategory === item && styles.categoryTextSelected,
+                selectedCategoryId === item.value &&
+                  styles.categoryTextSelected,
               ]}
             >
-              {item}
+              {item.label}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
+      {/* Products */}
       <View style={styles.gridContainer}>
-        {filteredData.map((item) => (
+        {products.map((item) => (
           <ProductCard
             key={item._id}
             product={item}
