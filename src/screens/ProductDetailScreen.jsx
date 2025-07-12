@@ -11,10 +11,11 @@ import {
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { ArrowLeft, ShoppingCart, Heart, Search } from "lucide-react-native";
-import * as SecureStore from "expo-secure-store";
 import Toast from "react-native-toast-message";
 import useFetch from "../hooks/common/useFetch";
 import usePost from "../hooks/common/usePost";
+import usePut from "../hooks/common/usePut";
+import { getAccessToken } from "../utils/tokenStorage";
 
 const { width } = Dimensions.get("window");
 
@@ -60,8 +61,17 @@ export default function ProductDetailScreen() {
     }
   );
 
+  const {
+    data: wishlist = [],
+    loading: loadingWishlist,
+    setData: setWishlist,
+  } = useFetch("/users/getWishList", true, false);
+
   const { post: addToWishlist, loading: wishlistLoading } = usePost(
     "/users/addToWishList"
+  );
+  const { put: removeFromWishlist, loading: removingWishlist } = usePut(
+    "/users/removeFromWishList"
   );
 
   const images = [product?.image_on_list, product?.hover_image_on_list].filter(
@@ -79,12 +89,25 @@ export default function ProductDetailScreen() {
     return () => clearInterval(interval);
   }, [images]);
 
+  const isInWishlist = Array.isArray(wishlist) && wishlist.includes(id);
+
   const handleAddToWishList = async () => {
+    const token = await getAccessToken();
+    if (!token) {
+      navigation.navigate("Login");
+      return;
+    }
+
+    const body = { productId: [id] };
+
     try {
-      const body = {
-        productId: [id],
-      };
-      await addToWishlist(body);
+      if (isInWishlist) {
+        await removeFromWishlist(body);
+        setWishlist(wishlist.filter((pid) => pid !== id));
+      } else {
+        await addToWishlist(body);
+        setWishlist([...wishlist, id]);
+      }
     } catch (err) {
       Toast.show({
         type: "error",
@@ -116,7 +139,7 @@ export default function ProductDetailScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header cố định */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} />
@@ -128,7 +151,7 @@ export default function ProductDetailScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Search bar bên trong ScrollView */}
+        {/* Search Bar */}
         <View style={styles.searchRow}>
           <TouchableOpacity
             style={styles.searchInput}
@@ -169,9 +192,13 @@ export default function ProductDetailScreen() {
             <Text style={styles.title}>{product.name_on_list}</Text>
             <TouchableOpacity
               onPress={handleAddToWishList}
-              disabled={wishlistLoading}
+              disabled={wishlistLoading || removingWishlist}
             >
-              <Heart size={22} color={wishlistLoading ? "#ccc" : "#999"} />
+              <Heart
+                size={22}
+                color={isInWishlist ? "#e91e63" : "#999"}
+                fill={isInWishlist ? "#e91e63" : "none"}
+              />
             </TouchableOpacity>
           </View>
 
@@ -199,23 +226,37 @@ export default function ProductDetailScreen() {
           </View>
 
           {/* Grouped rating filter */}
-          {Object.keys(reviewStats.grouped || {}).length > 0 && (
+          {reviewStats.total > 0 && (
             <View style={{ marginTop: 12 }}>
-              {[5, 4, 3, 2, 1].map((star) => (
-                <TouchableOpacity
-                  key={star}
-                  onPress={() => {
-                    setFilteredRating(star);
-                    refetchReviews();
-                  }}
-                  style={styles.groupedRow}
-                >
-                  <Text style={{ color: "#666" }}>{star} ★</Text>
-                  <Text style={{ fontWeight: "bold" }}>
-                    {reviewStats.grouped[star] || 0}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = reviewStats.grouped[star] || 0;
+                const percentage = ((count / reviewStats.total) * 100).toFixed(
+                  0
+                );
+                return (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => {
+                      setFilteredRating(star);
+                      refetchReviews();
+                    }}
+                    style={styles.groupedRowShopee}
+                  >
+                    <Text style={{ width: 40 }}>{star} ★</Text>
+                    <View style={styles.progressBarWrapper}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          { width: `${percentage}%` },
+                        ]}
+                      />
+                    </View>
+                    <Text style={{ width: 30, textAlign: "right" }}>
+                      {count}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
               {filteredRating && (
                 <TouchableOpacity
                   onPress={() => {
@@ -331,10 +372,22 @@ const styles = StyleSheet.create({
   },
   stockText: { color: "#00C897", fontWeight: "600" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  groupedRow: {
+  groupedRowShopee: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 4,
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  progressBarWrapper: {
+    flex: 1,
+    height: 8,
+    backgroundColor: "#eee",
+    borderRadius: 4,
+    marginHorizontal: 8,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: "#FFC107",
+    borderRadius: 4,
   },
   reviewCard: {
     borderWidth: 1,

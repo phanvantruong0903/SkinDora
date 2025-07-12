@@ -1,12 +1,12 @@
 import MainTabs from "./MainTabs";
 import LoadingScreen from "../screens/LoadingScreen";
 import { useAuth } from "../hooks/useAuth";
-import AuthStack from "./AuthStack";
+import MainTabsWithAuth from "./MainTabsWithAuth";
 
 export default function RootNavigator() {
   const { accessToken, isLoading } = useAuth();
 
   if (isLoading) return <LoadingScreen />;
 
-  return <MainTabs />;
+  return accessToken ? <MainTabs /> : <MainTabsWithAuth />;
 }

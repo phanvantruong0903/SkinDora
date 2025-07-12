@@ -13,7 +13,7 @@ import usePost from "../hooks/common/usePost";
 import LoadingScreen from "./LoadingScreen";
 
 const defaultAvatar =
-  "https://png.pngtree.com/png-clipart/20210129/ourmid/pngtree-blue-default-avatar-png-image_2813123.jpg";
+  "https://s3.amazonaws.com/37assets/svn/765-default-avatar.png";
 
 export default function UserProfileScreen() {
   const {

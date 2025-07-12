@@ -24,6 +24,7 @@ export default function HomeStack() {
         component={SearchScreen}
         options={{ headerShown: false }}
       />
+      
     </Stack.Navigator>
   );
 }
