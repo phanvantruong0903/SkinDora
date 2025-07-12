@@ -1,7 +1,8 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import HomeScreen from "../screens/HomeScreen";
-import DetailScreen from "../screens/DetailScreen";
+import ProductDetailScreen from "../screens/ProductDetailScreen";
+import SearchScreen from "../screens/SearchScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -11,13 +12,19 @@ export default function HomeStack() {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: "Trang chủ" }}
+        options={{ title: "Trang chủ", headerShown: false }}
       />
       <Stack.Screen
         name="Detail"
-        component={DetailScreen}
-        options={{ title: "Chi tiết" }}
+        component={ProductDetailScreen}
+        options={{ title: "Chi tiết", headerShown: false }}
       />
+      <Stack.Screen
+        name="SearchScreen"
+        component={SearchScreen}
+        options={{ headerShown: false }}
+      />
+      
     </Stack.Navigator>
   );
 }

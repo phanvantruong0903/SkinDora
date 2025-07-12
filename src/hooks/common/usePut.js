@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "../api/axiosInstance";
+import privateAxios from "../../utils/axiosPrivate";
 
 // Example sử dụng: const { put, loading, error } = usePut('/users/123')
 
@@ -8,10 +8,12 @@ export default function usePut(url) {
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
 
-  const put = async (body) => {
+  const put = async (body, customHeaders = {}) => {
     try {
       setLoading(true);
-      const res = await axios.put(url, body);
+      const res = await privateAxios.put(url, body, {
+        headers: customHeaders,
+      });
       setData(res.data.data);
       return res.data;
     } catch (err) {

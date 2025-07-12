@@ -1,23 +1,24 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import ProductListScreen from "./ProductListScreen";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
+import { useAuth } from "../hooks/useAuth";
+import { useCallback } from "react";
 
 export default function HomeScreen() {
+  const route = useRoute();
+  const search = route.params?.search || "";
+  // Build logout tạm để test login,register
+  // const {logout} = useAuth()
+
+  // useFocusEffect(
+  //   useCallback(()=> {
+  //     logout()
+  //   }, [])
+  // )
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Trang chủ</Text>
-    </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["top"]}>
+      <ProductListScreen searchFromParam={search} />
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8f8f8",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-});
