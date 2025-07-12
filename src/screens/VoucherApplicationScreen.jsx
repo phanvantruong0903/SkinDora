@@ -9,18 +9,18 @@ import {
 import privateAxios from "../utils/axiosPrivate";
 import { voucherEndpoints } from "../config/api";
 import { useEffect, useState } from "react";
-
-
+import {
+  CommonActions,
+} from "@react-navigation/native";
 
 const VoucherApplicationScreen = ({ navigation, route }) => {
-  const { selectedVoucher, selectedPaymentMethod } = route.params || {};
+  const { selectedVoucher, selectedPaymentMethod, cart } = route.params || {};
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchVouchers = async () => {
     try {
-      const {data} = await privateAxios.get(voucherEndpoints.list);
-      console.log(data)
+      const { data } = await privateAxios.get(voucherEndpoints.list);
       setVouchers(data.data || []);
     } catch (err) {
       console.error("Failed to fetch vouchers", err);
@@ -33,11 +33,56 @@ const VoucherApplicationScreen = ({ navigation, route }) => {
     fetchVouchers();
   }, []);
 
+  const getPreviousScreen = () => {
+    const routes = navigation.getState()?.routes;
+    const currentRouteIndex = routes.findIndex(
+      (r) => r.name === "VoucherApplication"
+    );
+    console.log("currentIndex: ", currentRouteIndex);
+    if (currentRouteIndex > 0) {
+      return routes[currentRouteIndex - 1].name;
+    }
+    return "Cart";
+  };
+
   const handleSelectVoucher = (voucher) => {
-    navigation.navigate("Cart", {
-      selectedVoucher: voucher,
-      selectedPaymentMethod,
-    });
+    const previousScreen = getPreviousScreen();
+    if (previousScreen === "Cart") {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            {
+              name: previousScreen,
+              params: {
+                selectedVoucher: voucher,
+                selectedPaymentMethod,
+                cart,
+              },
+            },
+          ],
+        })
+      );
+    } else {
+      navigation.dispatch((state) => {
+        const newRoutes = state.routes.slice(0, -2); // xoá Voucher + Checkout ra khỏi stack
+        return CommonActions.reset({
+          ...state,
+          routes: [
+            ...newRoutes,
+            {
+              name: previousScreen,
+              params: {
+                selectedVoucher: voucher,
+                selectedPaymentMethod,
+                cart,
+              },
+            },
+          ],
+          index: newRoutes.length, // trỏ vô screen checkout mới
+        });
+      });
+    }
   };
 
   return (

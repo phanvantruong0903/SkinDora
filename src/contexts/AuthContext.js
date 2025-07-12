@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import axios from "../utils/axiosPrivate";
 import { authEndpoints, userEndpoints } from "../config/api";
 import {
@@ -56,11 +56,13 @@ export const AuthProvider = ({ children }) => {
   // Đăng nhập
   const login = async (loginData) => {
     const { data } = await axios.post(authEndpoints.login, loginData);
+    console.log(data)
     await handleAuthSuccess(data.result);
   };
 
   const register = async (registerData) => {
     const { data } = await axios.post(authEndpoints.register, registerData);
+    console.log(data)
     await handleAuthSuccess(data.result);
   };
 

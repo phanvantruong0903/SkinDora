@@ -59,7 +59,7 @@ export default function LoginScreen() {
       setErrors({});
       await login({ email, password });
     } catch (error) {
-      console.log("login error: ", error)
+      console.log("login error: ", error.response)
       const serverErrors = error.response?.data?.errors;
       if (serverErrors) {
         const extractedErrors = {};
@@ -69,7 +69,7 @@ export default function LoginScreen() {
         setErrors(extractedErrors);
       } else {
         Alert.alert(
-          "Đăng ký thất bại",
+          "Đăng nhập thất bại",
           error.response?.data?.message || "Có lỗi xảy ra, vui lòng thử lại."
         );
       }

@@ -1,3 +1,4 @@
+import { CommonActions } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -6,22 +7,43 @@ import {
   FlatList,
 } from "react-native";
 
-
 const paymentOptions = [
   { id: "cod", name: "Thanh toán khi nhận hàng (COD)" },
-  { id: "momo", name: "Ví điện tử Momo" },
-  { id: "zalo", name: "Ví điện tử ZaloPay" },
-  { id: "bank", name: "Chuyển khoản ngân hàng" },
+  { id: "vnpay", name: "Ví VNPAY" },
+  { id: "zalopay", name: "Ví ZaloPay" },
 ];
 
 const PaymentMethodScreen = ({ navigation, route }) => {
   const { selectedVoucher, selectedPaymentMethod } = route.params || {};
 
+  const getPreviousScreen = () => {
+    const routes = navigation.getState()?.routes;
+    const currentRouteIndex = routes.findIndex(
+      (r) => r.name === "PaymentMethod"
+    );
+    console.log("currentIndex: ", currentRouteIndex);
+    if (currentRouteIndex > 0) {
+      return routes[currentRouteIndex - 1].name;
+    }
+    return "Cart";
+  };
+
   const handleSelectPayment = (method) => {
-    navigation.navigate("Cart", {
-      selectedPaymentMethod: method,
-      selectedVoucher,
-    });
+    const previousScreen = getPreviousScreen();
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: previousScreen,
+            params: {
+              selectedPaymentMethod: method,
+              selectedVoucher,
+            },
+          },
+        ],
+      })
+    );
   };
 
   return (

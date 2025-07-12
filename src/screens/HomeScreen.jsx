@@ -11,4 +11,4 @@ export default function HomeScreen() {
       <ProductListScreen searchFromParam={search} />
     </SafeAreaView>
   );
-}
+}``

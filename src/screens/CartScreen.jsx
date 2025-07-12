@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -14,51 +14,39 @@ import { useCart } from "../hooks/useCart";
 import BulkActionsBar from "../components/BulkActionsBar";
 import ProductInCart from "../components/ProductInCart";
 import { DiscountType } from "../constants/enum";
+import privateAxios from "../utils/axiosPrivate";
 
 const paymentLabelStyles = {
   cod: { color: "#4b5563", textAlign: "right" },
-  momo: { color: "#ec4899", textAlign: "right" },
-  zalo: { color: "#008fe5", textAlign: "right" },
-  bank: { color: "#10b981", textAlign: "right" },
+  vnpay: { color: "#ec4899", textAlign: "right" },
+  zalopay: { color: "#008fe5", textAlign: "right" },
 };
 
 const paymentLabelMap = {
   cod: "Thanh toán khi nhận hàng",
-  momo: "Ví Momo",
-  zalo: "Ví ZaloPay",
-  bank: "Chuyển khoản ngân hàng",
+  vnpay: "Ví VNPAY",
+  zalopay: "Ví ZaloPay",
 };
 
 const CartScreen = ({ navigation, route }) => {
   const [selectProductIds, setSelectProductIds] = useState([]);
   const [appliedVoucher, setAppliedVoucher] = useState(undefined);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(undefined);
+  const [appliedPaymentMethod, setAppliedPaymentMethod] = useState(undefined);
 
   const { cart, updateProductQuantityInCart, removeFromCart } = useCart();
 
-  const { selectedVoucher, selectedPaymentMethod: paymentFromRoute } =
-    route.params || {};
-
-  useEffect(() => {
-    if (selectedVoucher) setAppliedVoucher(selectedVoucher);
-  }, [selectedVoucher]);
-
-  useEffect(() => {
-    if (paymentFromRoute) setSelectedPaymentMethod(paymentFromRoute);
-  }, [paymentFromRoute]);
-
   const total = useMemo(() => {
     return Array.isArray(cart.Products)
-      ? cart.Products?.reduce((sum, item) => sum + item.unitPrice * item.Quantity, 0)
+      ? cart.Products?.reduce(
+          (sum, item) => sum + item.unitPrice * item.Quantity,
+          0
+        )
       : 0;
   }, [cart]);
 
   const discountAmount = useMemo(() => {
     if (!appliedVoucher) return 0;
-    if (
-      appliedVoucher.minOrderValue &&
-      total < appliedVoucher.minOrderValue
-    )
+    if (appliedVoucher.minOrderValue && total < appliedVoucher.minOrderValue)
       return 0;
 
     let discount = 0;
@@ -73,8 +61,6 @@ const CartScreen = ({ navigation, route }) => {
     }
     return discount;
   }, [appliedVoucher, total]);
-
-  const finalPrice = total - discountAmount;
 
   const updateQuantity = async (id, currentQuantity, change) => {
     const newQuantity = Math.max(1, currentQuantity + change);
@@ -93,7 +79,6 @@ const CartScreen = ({ navigation, route }) => {
       [
         { text: "Huỷ", style: "cancel" },
         {
-          text: "Xóa",
           style: "destructive",
           onPress: () => handleDelete(selectProductIds),
         },
@@ -107,10 +92,47 @@ const CartScreen = ({ navigation, route }) => {
     );
   };
 
+  const handlePurchase = async () => {
+    try {
+      const productIds = cart.Products.map((p) => p.ProductID.toString());
+      console.log(productIds);
+      const { data } = await privateAxios.post("/orders/cart", {
+        selectedProductIDs: productIds,
+      });
+
+      navigation.setParams({
+        selectedVoucher: undefined,
+        selectedPaymentMethod: undefined,
+      });
+      navigation.navigate("Checkout", {
+        cart: data.result,
+        selectedVoucher: appliedVoucher,
+        selectedPaymentMethod: appliedPaymentMethod,
+      });
+
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1:
+          error?.response?.data?.message ||
+          "Lỗi khi đặt hàng, vui lòng thử lại sau.",
+      });
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
+      const { selectedVoucher, selectedPaymentMethod } = route.params || {};
+
+      if (selectedVoucher !== undefined) {
+        setAppliedVoucher(selectedVoucher);
+      }
+      if (selectedPaymentMethod !== undefined) {
+        setAppliedPaymentMethod(selectedPaymentMethod);
+      }
+
       setSelectProductIds([]);
-    }, [])
+    }, [route.params, setAppliedVoucher, setAppliedPaymentMethod])
   );
 
   return (
@@ -147,7 +169,7 @@ const CartScreen = ({ navigation, route }) => {
             onPress={() =>
               navigation.navigate("VoucherApplication", {
                 selectedVoucher: appliedVoucher,
-                selectedPaymentMethod,
+                selectedPaymentMethod: appliedPaymentMethod,
               })
             }
           >
@@ -170,7 +192,7 @@ const CartScreen = ({ navigation, route }) => {
             onPress={() =>
               navigation.navigate("PaymentMethod", {
                 selectedVoucher: appliedVoucher,
-                selectedPaymentMethod,
+                selectedPaymentMethod: appliedPaymentMethod,
               })
             }
           >
@@ -178,13 +200,12 @@ const CartScreen = ({ navigation, route }) => {
               numberOfLines={1}
               style={[
                 styles.notSelectedText,
-                selectedPaymentMethod &&
-                  paymentLabelStyles[selectedPaymentMethod],
+                appliedPaymentMethod &&
+                  paymentLabelStyles[appliedPaymentMethod],
               ]}
             >
-              {selectedPaymentMethod
-                ? paymentLabelMap[selectedPaymentMethod] ||
-                  selectedPaymentMethod
+              {appliedPaymentMethod
+                ? paymentLabelMap[appliedPaymentMethod] || appliedPaymentMethod
                 : "Chọn phương thức thanh toán"}
             </Text>
             <Ionicons name="chevron-forward-outline" size={20} color="#ccc" />
@@ -201,9 +222,13 @@ const CartScreen = ({ navigation, route }) => {
               </Text>
             )}
           </View>
-          <TouchableOpacity style={styles.checkoutBtn}>
+          <TouchableOpacity
+            style={styles.checkoutBtn}
+            onPress={() => handlePurchase()}
+          >
             <Text style={styles.checkoutText}>
-              Mua Hàng ({Array.isArray(cart.Products) ? cart.Products?.length : 0})
+              Mua Hàng (
+              {Array.isArray(cart.Products) ? cart.Products?.length : 0})
             </Text>
           </TouchableOpacity>
         </View>
