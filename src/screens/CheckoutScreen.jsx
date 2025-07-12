@@ -17,20 +17,34 @@ import { useAuth } from "../hooks/useAuth";
 import privateAxios from "../utils/axiosPrivate";
 import { DiscountType } from "../constants/enum";
 import RecipientInfoSection from "../components/RecipientInfoSection";
+import { useCart } from "../hooks/useCart";
 
 const paymentLabelMap = {
-  cod: "Thanh toán khi nhận hàng",
-  vnpay: "Ví VNPAY",
-  zalopay: "Ví ZaloPay",
+  COD: "Thanh toán khi nhận hàng",
+  VNPAY: "Ví VNPAY",
+  ZALOPAY: "Ví ZaloPay",
 };
 
 export default function CheckoutScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { user } = useAuth();
-  const { cart, selectedVoucher, selectedPaymentMethod } = route.params || {};
+  const {setCart} = useCart()
+  const {
+    cart,
+    selectedVoucher,
+    selectedPaymentMethod,
+    recipientInfo: savedInfo,
+  } = route.params || {};
   const [appliedPaymentMethod, setAppliedPaymentMethod] = useState(
     selectedPaymentMethod || undefined
+  );
+  const [recipientInfo, setRecipientInfo] = useState(
+    savedInfo || {
+      name: user?.first_name || "",
+      phone: user?.phone_number || "",
+      address: user?.location || "",
+    }
   );
 
   if (!cart) {
@@ -67,20 +81,37 @@ export default function CheckoutScreen() {
   const finalTotal = total - discountAmount;
 
   const handleOrder = async () => {
+    const { name, phone, address } = recipientInfo;
+
+    if (!name || !phone || !address) {
+      Alert.alert(
+        "Thiếu thông tin",
+        "Vui lòng nhập đầy đủ thông tin người nhận."
+      );
+      return;
+    }
+    if (!appliedPaymentMethod) {
+      Alert.alert("Thiếu thông tin", "Vui lòng chọn phương thức thanh toán.");
+      return;
+    }
     try {
       const payload = {
         voucherCode: selectedVoucher?.code,
         PaymentMethod: appliedPaymentMethod,
-        ShipAddress: user.location,
+        RecipientName: name,
+        PhoneNumber: phone,
+        ShipAddress: address,
       };
 
-      await privateAxios.post("/orders/checkout", payload);
-
+      const {data} = await privateAxios.post("/orders/checkout", payload);
+      setCart([])
       Alert.alert("Thành công", "Đơn hàng đã được tạo!");
-      navigation.navigate("OrderSuccessScreen");
+      navigation.navigate("OrderSuccessScreen", {orderId: data.result?.orderId});
     } catch (err) {
-      console.error(err);
-      Alert.alert("Lỗi", "Không thể tạo đơn hàng.");
+      const message =
+        err?.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại sau.";
+
+      Alert.alert("Lỗi", message);
     }
   };
 
@@ -95,7 +126,10 @@ export default function CheckoutScreen() {
   return (
     <ScrollView style={styles.container}>
       {/* Thông tin người nhận */}
-      <RecipientInfoSection />
+      <RecipientInfoSection
+        recipientInfo={recipientInfo}
+        setRecipientInfo={setRecipientInfo}
+      />
 
       {/* Danh sách sản phẩm */}
       <View style={styles.section}>
@@ -139,6 +173,7 @@ export default function CheckoutScreen() {
             selectedVoucher,
             selectedPaymentMethod: appliedPaymentMethod,
             cart,
+            recipientInfo,
           })
         }
       >
@@ -151,13 +186,12 @@ export default function CheckoutScreen() {
       <View style={styles.section}>
         <Text style={styles.label}>Phương thức thanh toán:</Text>
         <View style={styles.paymentOptionsContainer}>
-          {["cod", "vnpay", "zalopay"].map((method) => (
+          {["COD", "VNPAY", "ZALOPAY"].map((method) => (
             <TouchableOpacity
               key={method}
               style={[
                 styles.paymentOption,
-                appliedPaymentMethod === method &&
-                  styles.paymentOptionSelected,
+                appliedPaymentMethod === method && styles.paymentOptionSelected,
               ]}
               onPress={() => setAppliedPaymentMethod(method)}
             >

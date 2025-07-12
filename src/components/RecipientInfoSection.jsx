@@ -1,16 +1,31 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { useCallback } from "react";
 
-export default function RecipientInfoSection() {
+export default function RecipientInfoSection({
+  recipientInfo,
+  setRecipientInfo,
+}) {
   const { user } = useAuth();
   const navigation = useNavigation();
+
+  useFocusEffect(
+    useCallback(()=>{
+      console.log(recipientInfo) 
+    })
+  )
 
   return (
     <TouchableOpacity
       style={styles.recipientSection}
-      onPress={() => navigation.navigate("EditRecipient")}
+      onPress={() =>
+        navigation.navigate("EditRecipient", {
+          recipientInfo,
+          setRecipientInfo, 
+        })
+      }
       activeOpacity={0.8}
     >
       <View style={styles.iconWrapper}>

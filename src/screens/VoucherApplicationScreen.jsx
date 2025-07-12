@@ -14,7 +14,7 @@ import {
 } from "@react-navigation/native";
 
 const VoucherApplicationScreen = ({ navigation, route }) => {
-  const { selectedVoucher, selectedPaymentMethod, cart } = route.params || {};
+  const { selectedVoucher, selectedPaymentMethod, cart, recipientInfo } = route.params || {};
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +38,6 @@ const VoucherApplicationScreen = ({ navigation, route }) => {
     const currentRouteIndex = routes.findIndex(
       (r) => r.name === "VoucherApplication"
     );
-    console.log("currentIndex: ", currentRouteIndex);
     if (currentRouteIndex > 0) {
       return routes[currentRouteIndex - 1].name;
     }
@@ -76,6 +75,7 @@ const VoucherApplicationScreen = ({ navigation, route }) => {
                 selectedVoucher: voucher,
                 selectedPaymentMethod,
                 cart,
+                recipientInfo
               },
             },
           ],

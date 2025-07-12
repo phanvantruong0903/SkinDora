@@ -17,15 +17,15 @@ import { DiscountType } from "../constants/enum";
 import privateAxios from "../utils/axiosPrivate";
 
 const paymentLabelStyles = {
-  cod: { color: "#4b5563", textAlign: "right" },
-  vnpay: { color: "#ec4899", textAlign: "right" },
-  zalopay: { color: "#008fe5", textAlign: "right" },
+  COD: { color: "#4b5563", textAlign: "right" },
+  VNPAY: { color: "#ec4899", textAlign: "right" },
+  ZALOPAY: { color: "#008fe5", textAlign: "right" },
 };
 
 const paymentLabelMap = {
-  cod: "Thanh toán khi nhận hàng",
-  vnpay: "Ví VNPAY",
-  zalopay: "Ví ZaloPay",
+  COD: "Thanh toán khi nhận hàng",
+  VNPAY: "Ví VNPAY",
+  ZALOPAY: "Ví ZaloPay",
 };
 
 const CartScreen = ({ navigation, route }) => {
@@ -109,7 +109,6 @@ const CartScreen = ({ navigation, route }) => {
         selectedVoucher: appliedVoucher,
         selectedPaymentMethod: appliedPaymentMethod,
       });
-
     } catch (error) {
       Toast.show({
         type: "error",
@@ -134,6 +133,21 @@ const CartScreen = ({ navigation, route }) => {
       setSelectProductIds([]);
     }, [route.params, setAppliedVoucher, setAppliedPaymentMethod])
   );
+
+  if (!Array.isArray(cart.Products) || cart.Products.length === 0) {
+    return (
+      <SafeAreaView style={styles.emptyContainer}>
+        <Ionicons name="cart-outline" size={64} color="#ccc" />
+        <Text style={styles.emptyText}>Giỏ hàng của bạn đang trống</Text>
+        <TouchableOpacity
+          style={styles.emptyButton}
+          onPress={() => navigation.navigate("HomeTab")}
+        >
+          <Text style={styles.emptyButtonText}>Tiếp tục mua sắm</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -238,6 +252,32 @@ const CartScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#555",
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  emptyButton: {
+    backgroundColor: "#e11d48",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  emptyButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
   container: { flex: 1, backgroundColor: "#f5f5f5" },
 
   stickyFooter: {

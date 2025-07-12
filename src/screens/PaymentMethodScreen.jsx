@@ -8,9 +8,9 @@ import {
 } from "react-native";
 
 const paymentOptions = [
-  { id: "cod", name: "Thanh toán khi nhận hàng (COD)" },
-  { id: "vnpay", name: "Ví VNPAY" },
-  { id: "zalopay", name: "Ví ZaloPay" },
+  { id: "COD", name: "Thanh toán khi nhận hàng (COD)" },
+  { id: "VNPAY", name: "Ví VNPAY" },
+  { id: "ZALOPAY", name: "Ví ZaloPay" },
 ];
 
 const PaymentMethodScreen = ({ navigation, route }) => {
